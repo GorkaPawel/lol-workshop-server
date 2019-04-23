@@ -9,10 +9,6 @@ const UserModel = sequelize.define("users", {
   password: {
     type: Sequelize.STRING,
     allowNull: false
-  },
-  passwordConfirm: {
-    type: Sequelize.STRING,
-    allowNull: false
   }
 });
 
