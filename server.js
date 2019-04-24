@@ -13,6 +13,10 @@ app.use(express.json());
 
 app.use(authRoutes);
 
+//Unrecognized errors handler
+app.use((error, req, res, next) => {
+  res.status(500).json({ error, message: "Something went wrong" });
+});
 //database models syncing
 sequelize
   .sync()

@@ -9,6 +9,10 @@ const UserModel = sequelize.define("users", {
   password: {
     type: Sequelize.STRING,
     allowNull: false
+  },
+  refreshToken: {
+    type: Sequelize.TEXT,
+    allowNull: true
   }
 });
 
