@@ -24,7 +24,16 @@ module.exports = (req, res, next) => {
     //verify token against server's secret
 
     const accessToken = tokenBearer.token;
-    const decodedToken = jwt.verify(accessToken, process.env.SECRET);
+    const decodedToken = jwt.verify(
+      accessToken,
+      process.env.SECRET,
+      (err, decoded) => {
+        if (err) {
+          throw err;
+        }
+        return decoded;
+      }
+    );
     if (!decodedToken) {
       throw new HttpError("Unauthorized.", 403);
     }
