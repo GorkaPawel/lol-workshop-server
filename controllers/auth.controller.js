@@ -16,7 +16,7 @@ exports.register = async (req, res, next) => {
     if (!errors.isEmpty()) {
       throw new ValidationError(errors.array(true)[0].msg, 422);
     }
-    //If no validation errors occured, hash password and push user to the database
+    //If no validation errors did occur, hash password and push user to the database
     const { email, password } = req.body;
     const passwordHash = await bcrypt.hash(password, 12);
     const newUser = await UserModel.create({
@@ -75,9 +75,9 @@ exports.logout = async (req, res, next) => {
     let user = await UserModel.findOne({ where: { id: userId } });
     user = await user.update({ refreshToken: null });
     if (!user) {
-      throw new Error();
+      throw new Error("Database error");
     }
-    return res.status(204).json({ message: "Logged out." });
+    res.status(200).json({ message: "Logged out." });
   } catch (error) {
     handleError(error, res, next);
   }

@@ -1,31 +1,27 @@
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const { HttpError } = require(path.normalize("../types/Errors"));
-const { Bearer } = require(path.normalize("../types/Bearer"));
 const { handleError } = require(path.normalize("../helpers/helpers"));
 
 module.exports = (req, res, next) => {
   try {
-    console.log(req.get("Authorization"));
-
     //check if header with tokens is even provided
     const authHeader = req.get("Authorization");
     if (!authHeader) {
       throw new HttpError("No authorization header provided.", 400);
     }
-    const tokenBearer = authHeader.split(" ")[1];
-    if (!(tokenBearer instanceof Bearer)) {
+    const { token, tokenRefresh } = JSON.parse(authHeader.split(" ")[1]);
+    if (typeof token != "string" || typeof tokenRefresh != "string") {
       throw new HttpError(
-        "Invalid request format, expects {token, tokenRefresh}",
+        "Invalid request format, expects {token: string, tokenRefresh: string}",
         400
       );
     }
 
     //verify token against server's secret
 
-    const accessToken = tokenBearer.token;
     const decodedToken = jwt.verify(
-      accessToken,
+      token,
       process.env.SECRET,
       (err, decoded) => {
         if (err) {
