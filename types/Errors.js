@@ -1,16 +1,12 @@
-exports.HttpError = class extends Error {
-  constructor(message, statusCode) {
+class ApplicationError extends Error {
+  constructor(message, status) {
     super();
-    this.message = message;
-    this.name = "HttpError";
-    this.statusCode = statusCode;
+
+    Error.captureStackTrace(this, this.constructor);
+
+    this.name = this.constructor.name;
+    this.message = message || "Something went wrong. Please try again.";
+    this.status = status || 500;
   }
-};
-exports.ValidationError = class extends Error {
-  constructor(message, statusCode) {
-    super();
-    this.message = message;
-    this.name = "ValidationError";
-    this.statusCode = statusCode;
-  }
-};
+}
+module.exports = { ApplicationError };

@@ -4,17 +4,14 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const UserModel = require(path.normalize("../models/user.model"));
 const { body, validationResult } = require("express-validator/check");
-const { HttpError, ValidationError } = require(path.normalize(
-  "../types/Errors"
-));
-const { handleError } = require(path.normalize("../helpers/helpers"));
+const { ApplicationError } = require(path.normalize("../types/Errors.js"));
 
 exports.register = async (req, res, next) => {
   //check for validation errors
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      throw new ValidationError(errors.array(true)[0].msg, 422);
+      throw new ApplicationError(errors.array(true)[0].msg, 422);
     }
     //If no validation errors did occur, hash password and push user to the database
     const { email, password } = req.body;
@@ -25,12 +22,12 @@ exports.register = async (req, res, next) => {
     });
     //If db error occurs
     if (!newUser) {
-      throw new HttpError("Somethig went wrong.", 500);
+      throw new Error();
     }
 
     res.status(201).json({ msg: "User registered." });
   } catch (error) {
-    handleError(error, res, next);
+    next(error);
   }
 };
 exports.login = async (req, res, next) => {
@@ -40,7 +37,7 @@ exports.login = async (req, res, next) => {
     //check if user with given email is registered
     const registeredUser = await UserModel.findOne({ where: { email } });
     if (!registeredUser) {
-      throw new HttpError("Invalid login credentials.", 401);
+      throw new ApplicationError("Invalid login credentials.", 401);
     }
 
     //check if given password corresponds with the one stored in DB
@@ -49,7 +46,7 @@ exports.login = async (req, res, next) => {
       registeredUser.password
     );
     if (!paswordCompareResult) {
-      throw new HttpError("Invalid login credentials.", 401);
+      throw new ApplicationError("Invalid login credentials.", 401);
     }
 
     //create access token if user's credentials are valid
@@ -59,30 +56,75 @@ exports.login = async (req, res, next) => {
     });
     //create refresh token and store it in DB
     const refreshToken = randToken.uid(256);
-    registeredUser.update({ refreshToken: refreshToken });
+    const expiryDate =
+      Date.now() + parseInt(process.env.REFRESH_TOKEN_LIFESPAN);
+
+    registeredUser.update({
+      refreshToken: refreshToken,
+      tokenExpires: expiryDate
+    });
     //send both tokens to client
     res.status(200).json({
-      token,
-      refreshToken
+      token: token,
+      tokenRefresh: refreshToken
     });
   } catch (error) {
-    handleError(error, res, next);
+    next(error);
   }
 };
 exports.logout = async (req, res, next) => {
   try {
     const userId = req.userId;
     let user = await UserModel.findOne({ where: { id: userId } });
-    user = await user.update({ refreshToken: null });
+    // delete refreshToken and reset expiry date
+    user = await user.update({
+      refreshToken: null,
+      tokenExpires: 0
+    });
     if (!user) {
-      throw new Error("Database error");
+      throw new Error();
     }
     res.status(200).json({ message: "Logged out." });
   } catch (error) {
-    handleError(error, res, next);
+    next(error);
   }
 };
-
+exports.refresh = async (req, res, next) => {
+  try {
+    // check if recieved refreshToken exists in db and if it hasnt expired
+    const tokenRefresh = req.body.tokenRefresh;
+    if (!tokenRefresh || typeof tokenRefresh != "string") {
+      throw new ApplicationError("Unauthorized.", 401);
+    }
+    const user = await UserModel.findOne({
+      where: { refreshToken: tokenRefresh }
+    });
+    if (!user || Date.now() >= user.tokenExpires) {
+      req.userId = null;
+      throw new ApplicationError("Unauthorized.", 401);
+    }
+    const userId = user.id;
+    const token = jwt.sign({ userId: userId }, process.env.SECRET, {
+      expiresIn: process.env.TOKEN_LIFESPAN
+    });
+    //create refresh token and store it in DB
+    const refreshToken = randToken.uid(256);
+    const updateSuccess = await user.update({
+      refreshToken: refreshToken,
+      tokenExpires: Date.now() + parseInt(process.env.REFRESH_TOKEN_LIFESPAN)
+    });
+    if (!updateSuccess) {
+      throw new Error();
+    }
+    // send new token and refreshToken back to client
+    res.status(200).json({
+      token: token,
+      tokenRefresh: refreshToken
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 //an object containing validators
 exports.validators = {
   //email validator

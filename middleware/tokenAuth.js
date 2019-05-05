@@ -1,45 +1,51 @@
 const jwt = require("jsonwebtoken");
 const path = require("path");
-const { HttpError } = require(path.normalize("../types/Errors"));
-const { handleError } = require(path.normalize("../helpers/helpers"));
+const { ApplicationError } = require(path.normalize("../types/Errors.js"));
 
 module.exports = (req, res, next) => {
   try {
     //check if header with tokens is even provided
     const authHeader = req.get("Authorization");
     if (!authHeader) {
-      throw new HttpError("No authorization header provided.", 400);
-    }
-    const { token, tokenRefresh } = JSON.parse(authHeader.split(" ")[1]);
-    if (typeof token != "string" || typeof tokenRefresh != "string") {
-      throw new HttpError(
-        "Invalid request format, expects {token: string, tokenRefresh: string}",
-        400
-      );
+      throw new ApplicationError("No authorization header provided.", 401);
     }
 
-    //verify token against server's secret
-
+    // TODO this might break the app if someone sets wrong header (?)
+    const token = authHeader.split(" ")[1];
+    //
     const decodedToken = jwt.verify(
       token,
       process.env.SECRET,
-      (err, decoded) => {
-        if (err) {
-          throw err;
+      (error, decoded) => {
+        if (error) {
+          switch (error.name) {
+            case "TokenExpiredError": {
+              error.status = 403;
+              throw error;
+            }
+            case "JsonWebTokenError": {
+              error.status = 401;
+              throw error;
+            }
+            default: {
+              throw error;
+            }
+          }
         }
         return decoded;
       }
     );
+
     if (!decodedToken) {
-      throw new HttpError("Unauthorized.", 403);
+      throw new ApplicationError("Unauthorized.", 401);
     }
 
     //If verified, attach user id to request, so you can use it to fetch user specific data
     req.userId = decodedToken.userId;
     next();
 
-    //handle recognized errors, pass unrecognized to another handler
+    //pass errors to central handler
   } catch (error) {
-    handleError(error, res, next);
+    next(error);
   }
 };

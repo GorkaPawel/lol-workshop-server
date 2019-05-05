@@ -13,6 +13,10 @@ const UserModel = sequelize.define("users", {
   refreshToken: {
     type: Sequelize.TEXT,
     allowNull: true
+  },
+  tokenExpires: {
+    type: Sequelize.BIGINT,
+    allowNull: true
   }
 });
 
