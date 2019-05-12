@@ -81,10 +81,7 @@ exports.logout = async (req, res, next) => {
       refreshToken: null,
       tokenExpires: 0
     });
-    if (!user) {
-      throw new Error();
-    }
-    res.status(200).json({ message: "Logged out." });
+    res.status(204);
   } catch (error) {
     next(error);
   }
