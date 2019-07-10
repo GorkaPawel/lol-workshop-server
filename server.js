@@ -5,6 +5,11 @@ const sequelize = require(path.join(__dirname, "config", "database"));
 const cors = require("cors");
 //routes imports
 const authRoutes = require(path.join(__dirname, "routes", "auth.routes"));
+const championRoutes = require(path.join(
+  __dirname,
+  "routes",
+  "champion.routes"
+));
 
 const app = express();
 
@@ -12,6 +17,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(authRoutes);
+app.use(championRoutes);
 
 //Main handler, might need fallback to express's internal handler for some cases
 app.use((error, req, res, next) => {

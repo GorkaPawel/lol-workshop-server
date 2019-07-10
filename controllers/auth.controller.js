@@ -143,7 +143,7 @@ exports.validators = {
   password: body("password")
     .trim()
     .isLength({ min: 5 })
-    .withMessage("Password has to have a minimum of five characters")
+    .withMessage("Password has to have a minimum of 5 characters")
     .isAlphanumeric(),
   //pssword confirmation validation
   passwordConfirm: body("passwordConfirm")
