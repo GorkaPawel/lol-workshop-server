@@ -1,37 +1,23 @@
-const { Kayn, REGIONS } = require("kayn");
+const path = require("path");
 const axios = require("axios");
-const kayn = Kayn("RGAPI-5f3d70ee-7bf5-41d6-9aae-0e4547078f2d")({
-  region: REGIONS.NORTH_AMERICA,
-  locale: "en_US",
-  debugOptions: {
-    isEnabled: true,
-    showKey: false
-  },
-  requestOptions: {
-    shouldRetry: true,
-    numberOfRetriesBeforeAbort: 3,
-    delayBeforeRetry: 1000,
-    burst: false,
-    shouldExitOn403: false
-  },
-  cacheOptions: {
-    cache: null,
-    timeToLives: {
-      useDefault: false,
-      byGroup: {},
-      byMethod: {}
-    }
-  }
-});
+const kayn = require(path.normalize("../config/kayn"));
+const search = require(path.normalize("../shared/functions")).search;
 
 exports.getChampionList = async (req, res, next) => {
-  const championList = await kayn.DDragon.Champion.list();
+  let championList = await kayn.DDragon.Champion.list();
 
   const entries = Object.entries(championList.data);
-  const list = entries.map(entry => {
-    return { championName: entry[0], id: entry[1].key };
+
+  championList = entries.map(entry => {
+    return { id: entry[1].key, name: entry[0] };
   });
-  res.status(200).json(list);
+
+  const term =
+    req.params.searchTerm.charAt(0).toUpperCase() +
+    req.params.searchTerm.slice(1);
+
+  const searchResults = search(term, championList);
+  res.status(200).json(searchResults);
 };
 
 exports.getChampion = async (req, res, next) => {
