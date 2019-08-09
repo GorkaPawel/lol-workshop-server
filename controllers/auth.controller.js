@@ -2,7 +2,7 @@ const path = require("path");
 const randToken = require("rand-token");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const UserModel = require(path.normalize("../models/user.model"));
+const User = require(path.normalize("../models/user.model"));
 const { body, validationResult } = require("express-validator/check");
 const { ApplicationError } = require(path.normalize("../types/Errors.js"));
 
@@ -16,10 +16,10 @@ exports.register = async (req, res, next) => {
     //If no validation errors did occur, hash password and push user to the database
     const { email, password } = req.body;
     const passwordHash = await bcrypt.hash(password, 12);
-    const newUser = await UserModel.create({
+    const newUser = await new User({
       email: email,
       password: passwordHash
-    });
+    }).save();
     //If db error occurs
     if (!newUser) {
       throw new Error();
@@ -35,7 +35,7 @@ exports.login = async (req, res, next) => {
     const { email, password } = req.body;
 
     //check if user with given email is registered
-    const registeredUser = await UserModel.findOne({ where: { email } });
+    const registeredUser = await User.findOne({ email: email });
     if (!registeredUser) {
       throw new ApplicationError("Invalid login credentials.", 401);
     }
@@ -50,7 +50,8 @@ exports.login = async (req, res, next) => {
     }
 
     //create access token if user's credentials are valid
-    const userId = registeredUser.id;
+    const userId = registeredUser._id;
+    console.log("userId: ", userId);
     const token = jwt.sign({ userId: userId }, process.env.SECRET, {
       expiresIn: process.env.TOKEN_LIFESPAN
     });
@@ -59,10 +60,9 @@ exports.login = async (req, res, next) => {
     const expiryDate =
       Date.now() + parseInt(process.env.REFRESH_TOKEN_LIFESPAN);
 
-    registeredUser.update({
-      refreshToken: refreshToken,
-      tokenExpires: expiryDate
-    });
+    registeredUser.refreshToken = refreshToken;
+    registeredUser.tokenExpires = expiryDate;
+    await registeredUser.save();
     //send both tokens to client
     res.status(200).json({
       token: token,
@@ -75,12 +75,19 @@ exports.login = async (req, res, next) => {
 exports.logout = async (req, res, next) => {
   try {
     const userId = req.userId;
-    let user = await UserModel.findOne({ where: { id: userId } });
-    // delete refreshToken and reset expiry date
-    user = await user.update({
-      refreshToken: null,
-      tokenExpires: 0
-    });
+    const updateResult = await User.findOneAndUpdate(
+      { _id: userId },
+      {
+        $set: {
+          refreshToken: null,
+          tokenExpires: 0
+        }
+      },
+      { useFindAndModify: false }
+    );
+    if (!updateResult) {
+      throw new Error();
+    }
     res.status(204);
   } catch (error) {
     next(error);
@@ -93,23 +100,21 @@ exports.refresh = async (req, res, next) => {
     if (!tokenRefresh || typeof tokenRefresh != "string") {
       throw new ApplicationError("Unauthorized.", 401);
     }
-    const user = await UserModel.findOne({
-      where: { refreshToken: tokenRefresh }
-    });
+    const user = await User.findOne({ refreshToken: tokenRefresh });
     if (!user || Date.now() >= user.tokenExpires) {
       req.userId = null;
       throw new ApplicationError("Unauthorized.", 401);
     }
-    const userId = user.id;
+    const userId = user._id;
     const token = jwt.sign({ userId: userId }, process.env.SECRET, {
       expiresIn: process.env.TOKEN_LIFESPAN
     });
     //create refresh token and store it in DB
     const refreshToken = randToken.uid(256);
-    const updateSuccess = await user.update({
-      refreshToken: refreshToken,
-      tokenExpires: Date.now() + parseInt(process.env.REFRESH_TOKEN_LIFESPAN)
-    });
+    user.refreshToken = refreshToken;
+    user.tokenExpires =
+      Date.now() + parseInt(process.env.REFRESH_TOKEN_LIFESPAN);
+    const updateSuccess = await user.save();
     if (!updateSuccess) {
       throw new Error();
     }
@@ -130,8 +135,8 @@ exports.validators = {
     .isEmail()
     //check if email already exists in database
     .custom(async (value, { req }) => {
-      const isEmailUsed = await UserModel.findOne({
-        where: { email: req.body.email }
+      const isEmailUsed = await User.findOne({
+        email: req.body.email
       });
 
       if (isEmailUsed) {

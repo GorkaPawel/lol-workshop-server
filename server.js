@@ -1,8 +1,8 @@
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 const express = require("express");
-const sequelize = require(path.join(__dirname, "config", "database"));
 const cors = require("cors");
+const mongoose = require("mongoose");
 //routes imports
 const authRoutes = require(path.join(__dirname, "routes", "auth.routes"));
 const championRoutes = require(path.join(
@@ -30,10 +30,12 @@ app.use((error, req, res, next) => {
     .status(error.status)
     .json({ error: error.message, callstack: error.stack });
 });
-//database models syncing
-sequelize
-  .sync()
-  .then(() => app.listen(process.env.PORT || 8080))
-  .catch(error => {
-    console.log(error);
+
+mongoose
+  .connect(process.env.DB_HOST, { useNewUrlParser: true })
+  .then(() => {
+    app.listen(process.env.PORT || 8080);
+  })
+  .catch(err => {
+    console.log(err);
   });
