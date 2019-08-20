@@ -3,26 +3,25 @@ const kayn = require(path.normalize("../config/kayn"));
 const search = require(path.normalize("../shared/functions")).search;
 
 exports.getItems = async (req, res, next) => {
-  const items = await kayn.DDragon.Item.list();
-  const term =
-    req.params.searchTerm.charAt(0).toUpperCase() +
-    req.params.searchTerm.slice(1);
-
+  const data = await kayn.DDragon.Item.list();
+  const items = data.data;
   const itemList = [];
-  for (const item in items.data) {
-    if (items.data[item].maps["11"]) {
-      itemList.push({ id: item, name: items.data[item].name });
-    }
+  for (let id in items) {
+    itemList.push({ id, name: items[id].name });
   }
-
-  const searchResults = search(term, itemList);
-
-  res.status(200).json(searchResults);
+  res.status(200).json(itemList);
 };
 
 exports.getItem = async (req, res, next) => {
   const items = await kayn.DDragon.Item.list();
   const id = req.params.itemId;
-
-  res.status(200).json(items.data[id]);
+  const result = items.data[id];
+  const item = {
+    id: id,
+    name: result.name,
+    description: result.description,
+    plaintext: result.plaintext,
+    gold: result.gold
+  };
+  res.status(200).json(item);
 };

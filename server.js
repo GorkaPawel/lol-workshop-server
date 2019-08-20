@@ -11,6 +11,12 @@ const championRoutes = require(path.join(
   "champion.routes"
 ));
 const itemRoutes = require(path.join(__dirname, "routes", "item.routes"));
+const workshopRoutes = require(path.join(
+  __dirname,
+  "routes",
+  "workshop.routes"
+));
+
 const app = express();
 
 //every request goes through this middleware
@@ -19,6 +25,7 @@ app.use(cors());
 app.use(authRoutes);
 app.use(championRoutes);
 app.use(itemRoutes);
+app.use(workshopRoutes);
 
 //Main handler, might need fallback to express's internal handler for some cases
 app.use((error, req, res, next) => {

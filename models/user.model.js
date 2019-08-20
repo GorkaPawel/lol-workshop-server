@@ -3,34 +3,17 @@ const Schema = mongoose.Schema;
 
 const buildSchema = new Schema({
   buildName: String,
-  item0: {
-    ApiID: String
-  },
-  item1: {
-    ApiID: String
-  },
-  item2: {
-    ApiID: String
-  },
-  item3: {
-    ApiID: String
-  },
-  item4: {
-    ApiID: String
-  },
-  item5: {
-    ApiID: String
-  }
+  items: []
 });
 const noteSchema = new Schema({
-  content: String
+  title: String,
+  note: String
 });
 const championSchema = new Schema({
-  ApiId: String,
+  name: String,
   notes: [noteSchema],
   builds: [buildSchema]
 });
-
 const userSchema = new Schema({
   email: {
     type: String,

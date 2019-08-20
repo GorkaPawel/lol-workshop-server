@@ -7,22 +7,15 @@ exports.getChampionList = async (req, res, next) => {
   let championList = await kayn.DDragon.Champion.list();
 
   const entries = Object.entries(championList.data);
-
   championList = entries.map(entry => {
     return { id: entry[1].key, name: entry[0] };
   });
-
-  const term =
-    req.params.searchTerm.charAt(0).toUpperCase() +
-    req.params.searchTerm.slice(1);
-
-  const searchResults = search(term, championList);
-  res.status(200).json(searchResults);
+  res.status(200).json(championList);
 };
 
 exports.getChampion = async (req, res, next) => {
   try {
-    const championName = req.params.championId;
+    const championName = req.params.championName;
     const champion = await kayn.DDragon.Champion.get(championName);
     const championId = champion.data[championName].key;
 

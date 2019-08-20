@@ -6,7 +6,7 @@ const itemController = require(path.normalize(
 
 router = express.Router();
 
-router.get("/items/:searchTerm", itemController.getItems);
+router.get("/items", itemController.getItems);
 router.get("/item/:itemId", itemController.getItem);
 
 module.exports = router;

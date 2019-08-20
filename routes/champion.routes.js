@@ -5,6 +5,6 @@ const championController = require(path.normalize(
 ));
 router = express.Router();
 
-router.get("/champion/:championId", championController.getChampion);
-router.get("/championList/:searchTerm", championController.getChampionList);
+router.get("/champion/:championName", championController.getChampion);
+router.get("/champions", championController.getChampionList);
 module.exports = router;
