@@ -11,6 +11,7 @@ const championRoutes = require(path.join(
   "champion.routes"
 ));
 const itemRoutes = require(path.join(__dirname, "routes", "item.routes"));
+const runesRoutes = require(path.join(__dirname, "routes", "runes.routes"));
 const workshopRoutes = require(path.join(
   __dirname,
   "routes",
@@ -25,6 +26,7 @@ app.use(cors());
 app.use(authRoutes);
 app.use(championRoutes);
 app.use(itemRoutes);
+app.use(runesRoutes);
 app.use(workshopRoutes);
 
 //Main handler, might need fallback to express's internal handler for some cases

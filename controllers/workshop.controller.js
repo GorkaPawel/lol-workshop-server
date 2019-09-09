@@ -31,7 +31,8 @@ exports.updateBuild = async (req, res, next) => {
   user
     .save()
     .then(updatedUserDoc => {
-      res.status(200).json(updatedUserDoc);
+      const builds = champion.builds;
+      res.status(200).json(builds);
     })
     .catch(err => {
       res.status(400).json(err);
@@ -52,27 +53,26 @@ exports.updateNote = async (req, res, next) => {
   user
     .save()
     .then(updatedUserDoc => {
-      res.status(200).json(updatedUserDoc);
+      const notes = champion.notes;
+      res.status(200).json(notes);
     })
     .catch(err => {
       res.status(400).json(err);
     });
 };
+
 exports.getUserChampion = (req, res, next) => {
   const userId = req.body.userId;
   const championName = req.params.championName;
-  console.log(userId, " ", championName);
   let champion;
   User.findById(userId)
     .then(user => {
-      console.log(user);
       champion = user.champions.find(champion => {
         return champion.name === championName;
       });
       res.status(200).json(champion);
     })
     .catch(err => {
-      console.log(err);
       res.status(500).json("Temp error: internal error");
     });
 };
