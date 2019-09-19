@@ -4,6 +4,9 @@ const kayn = require(path.normalize("../config/kayn"));
 exports.getRunes = async (req, res, next) => {
   try {
     const data = await kayn.DDragon.RunesReforged.list().version("9.16.1");
+    if (!data) {
+      throw new Error("Could not get runes.");
+    }
 
     res.status(200).json(data);
   } catch (error) {
@@ -13,7 +16,6 @@ exports.getRunes = async (req, res, next) => {
 exports.updateRune = async (req, res, next) => {
   const { userId, runePage, championName } = req.body;
   const { champion, user } = await getChampion(userId, championName);
-  console.log(req.body);
   _id = runePage._id;
   if (!_id) {
     champion.runes.push(runePage);

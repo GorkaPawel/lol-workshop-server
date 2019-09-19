@@ -1,8 +1,11 @@
 const path = require("path");
+const fs = require("fs");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const helmet = require("helmet");
+const morgan = require("morgan");
 //routes imports
 const authRoutes = require(path.join(__dirname, "routes", "auth.routes"));
 const championRoutes = require(path.join(
@@ -20,6 +23,13 @@ const workshopRoutes = require(path.join(
 
 const app = express();
 
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, "access.log"),
+  { flags: "a" }
+);
+
+app.use(helmet());
+app.use(morgan("combined", { stream: accessLogStream }));
 //every request goes through this middleware
 app.use(express.json());
 app.use(cors());
@@ -35,9 +45,7 @@ app.use((error, req, res, next) => {
     error.status = 500;
     error.message = "Internal sever error";
   }
-  res
-    .status(error.status)
-    .json({ error: error.message, callstack: error.stack });
+  res.status(error.status).json(error.message);
 });
 
 mongoose

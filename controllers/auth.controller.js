@@ -51,7 +51,6 @@ exports.login = async (req, res, next) => {
 
     //create access token if user's credentials are valid
     const userId = registeredUser._id;
-    console.log("userId: ", userId);
     const token = jwt.sign({ userId: userId }, process.env.SECRET, {
       expiresIn: process.env.TOKEN_LIFESPAN
     });
@@ -98,7 +97,7 @@ exports.refresh = async (req, res, next) => {
     // check if recieved refreshToken exists in db and if it hasnt expired
     const tokenRefresh = req.body.tokenRefresh;
     if (!tokenRefresh || typeof tokenRefresh != "string") {
-      throw new ApplicationError("Unauthorized.", 401);
+      throw new ApplicationError("Unauthorized", 401);
     }
     const user = await User.findOne({ refreshToken: tokenRefresh });
     if (!user || Date.now() >= user.tokenExpires) {

@@ -81,7 +81,7 @@ exports.getUserChampionList = (req, res, next) => {
   User.findById(userId)
     .then(user => {
       const champions = user.champions.map(champion => {
-        return { _id: champion._id, key: champion.ApiId, name: champion.name };
+        return { name: champion.name };
       });
       res.status(200).json(champions);
     })
